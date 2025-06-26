@@ -2,6 +2,9 @@ from vmanage_api import VmanageRestApi
 from py_config_parse import Config
 import csv
 
+# Creates a spreadsheet of all edges in vManage, tunnel interfaces, and configured upstream/downstream bandwidth
+# Assumes that cEdge shaping and per-tunnel QOS are configured
+
 password = input('Password: ')
 v = VmanageRestApi("thd-ol4-vmanage.sdwan.cisco.com:8443", "cxadmin", password)
 d = v.get_request('/device')['data']
