@@ -50,6 +50,12 @@
 
 Returns a csv file of all upstream and downstream bandwidth values on tunnel interfaces for all edges in a vManage.
 
+Edit vManage info in py_bandwidth.py and run:
+
+> python py_bandwidth.py
+
 # py_ints
 
-Returns a csv file of all ints in a switch.
+Returns a csv file of all ints in a switch.  Run against a text config:
+
+> python py_ints config.txt
