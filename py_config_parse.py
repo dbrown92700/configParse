@@ -72,6 +72,8 @@ class Config:
             search_lines = source_lines.copy()
         next_lines = []
         found_lines = {}
+        if type(search_command_list) is str:
+            search_command_list = [search_command_list]
         for num, command in enumerate(search_command_list):
             for line in search_lines:
                 if re.search(command, self.lines[line]['command']):
