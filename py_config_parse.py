@@ -49,7 +49,7 @@ class Config:
             if base_lines[base_line]['indent'] == 0:
                 self.lines[0]['children'].append(base_line)
 
-    def search_lines(self, search_command_list: list, source_lines=[]) -> dict:
+    def search_lines(self, search_command_list: list, source_lines=[], recursive=False, include_parents=False) -> dict:
 
         """
         Does an iterative search through all sections specified in the search_command_list and
@@ -66,47 +66,71 @@ class Config:
 
         """
 
+        if type(search_command_list) is str:
+            search_command_list = [search_command_list]
+        if len(search_command_list) > 1:
+            recursive = False
         if not source_lines:
             search_lines = self.lines[0]['children']
         else:
             search_lines = source_lines.copy()
         next_lines = []
         found_lines = {}
-        if type(search_command_list) is str:
-            search_command_list = [search_command_list]
         for num, command in enumerate(search_command_list):
             for line in search_lines:
                 if re.search(command, self.lines[line]['command']):
                     if num+1 < len(search_command_list):
                         next_lines = next_lines + self.lines[line]['children']
                     else:
+                        if include_parents:
+                            parents = self.find_parents(line)
+                            for parent in parents:
+                                if parent not in found_lines:
+                                    found_lines[parent] = self.lines[parent]
                         found_lines[line] = self.lines[line]
+                if recursive and self.lines[line]['children']:
+                    recursive_lines = self.search_lines(search_command_list,
+                                                        source_lines=self.lines[line]['children'],
+                                                        recursive=True, include_parents=include_parents)
+                    found_lines = found_lines | recursive_lines
+
+
             search_lines = next_lines.copy()
             next_lines = []
 
         return found_lines
 
-    def print_section(self, section_line=0):
+    def print_section(self, section_line=0, recursive=True):
     
         """
         Prints the section in standard indent format starting with line number section_line.
+        Input can be an int for a single section, list for multiple sections, or dict of lines.
         Default is the full config.
+
+        If recursive is False, only prints the lines without children.
         """
+        if isinstance(section_line, int):
+                section_line = [section_line]
+        if isinstance(section_line, dict):
+                section_line = list(section_line.keys())
         def recursive_print(lines: list):
             for line in lines:
                 print(f'{int(line):04}: {self.lines[line]["indent"] * " "}{self.lines[line]["command"]}')
-                recursive_print(self.lines[line]['children'])
-        recursive_print([section_line])
+                if recursive:
+                    recursive_print(self.lines[line]['children'])
+        recursive_print(section_line)
 
-    def print_regex_section(self, line_regex: str, source_lines=[]):
+    def print_regex_section(self, line_regex: list, source_lines=[]):
     
         """
         Prints all sections that contain the line_regex. Only searches the direct children of the source lines.
 
           print_regex_section('^interface') will print the config of all interfaces
         """
-    
-        sections = self.search_lines([line_regex], source_lines)
+
+        if isinstance(line_regex, str):
+            line_regex = [line_regex]
+        sections = self.search_lines(line_regex, source_lines)
         for section in sections:
             self.print_section(section)
 
